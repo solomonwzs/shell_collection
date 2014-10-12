@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# example: ./img_comp.sh /img/dir/path
+
 PROCESS_NUM=2
 PROCESS_FIFO=/tmp/$$.fifo0
 PROGRESS_BAR_FIFO=/tmp/$$.fifo1
