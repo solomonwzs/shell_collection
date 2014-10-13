@@ -4,21 +4,23 @@ N=5
 FIFO=/tmp/$$.fifo
 
 mkfifo $FIFO
-exec 3<>$FIFO
+#exec 3<>$FIFO
 
 loop(){
     for i in $(seq 1 $N); do
-        #read tmp < $FIFO
-        read -u3 tmp
-        echo "$i out"
-    done
+        until read tmp; do
+            :
+        done
+        #read -u3 tmp
+        echo "$tmp out"
+    done < $FIFO
 }
 
 loop &
 LOOP_PID=$!
 for i in $(seq 1 $N); do
-    #echo $i > $FIFO
-    echo $i >&3
+    sleep 0.1; echo $i > $FIFO
+    #sleep 0.1; echo $i >&3
     echo "$i in"
 done
 wait $LOOP_PID
