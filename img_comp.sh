@@ -3,8 +3,9 @@
 # example: ./img_comp.sh /img/dir/path
 
 PROCESS_NUM=2
-PROCESS_FIFO=/tmp/$$.fifo0
-PROGRESS_BAR_FIFO=/tmp/$$.fifo1
+TMP_DIR=/tmp/$$
+PROCESS_FIFO=$TMP_DIR/pf.fifo
+PROGRESS_BAR_FIFO=$TMP_DIR/pbf.fifo
 COMPLETE_COUNT=0
 ARGS_LIST=()
 PIDS=()
@@ -19,31 +20,42 @@ MSG_BLUE="\033[01;34m"
 MSG_PURPLE="\033[01;35m"
 MSG_CYAN="\033[01;36m"
 
-error_msg(){
+function error_msg(){
     echo -e "$MSG_RED$1$MSG_END"
 }
 
-info_msg0(){
+function info_msg0(){
     echo -e "$1$MSG_END"
 }
 
-info_msg1(){
+function info_msg1(){
     echo -e "$MSG_GREEN$1$MSG_END"
 }
 
-info_msg2(){
+function info_msg2(){
     echo -e "$MSG_YELLOW$1$MSG_END"
 }
 
-info_msg3(){
+function info_msg3(){
     echo -e "$MSG_BLUE$1$MSG_END"
 }
 
-args_list(){
+function init_tmp_dir(){
+    mkdir $TMP_DIR
+    mkfifo $PROCESS_FIFO
+    mkfifo $PROGRESS_BAR_FIFO
+}
+
+function clean_tmp_dir(){
+    info_msg1 ">>> clean up..."
+    rm -r $TMP_DIR
+}
+
+function args_list(){
     find "$1" -iname "*.jpg" -print0
 }
 
-draw_progress_bar(){
+function draw_progress_bar(){
     finish=$(($PROGRESS_BAR_LEN*$1/$2))
     #echo $(($(date +%s)-$START_TIME))|awk '{printf(">>> %02d:%02d [", $0/60, $0%60)}'
     echo -ne ">>> ["
@@ -57,7 +69,7 @@ draw_progress_bar(){
     echo -ne "\r"
 }
 
-progress_bar_process(){
+function progress_bar_process(){
     for i in $(seq 1 $1); do
         read -u4 j
         draw_progress_bar $i $1
@@ -65,20 +77,23 @@ progress_bar_process(){
     echo ""
 }
 
-map_process(){
+function map_process(){
     #size1=$(ls -l "$1"|cut -d" " -f5)
-    convert -quality 85 "$1" "$1"
+    #convert -quality 85 "$1" "$1"
     #size2=$(ls -l "$1"|cut -d" " -f5)
     #rate=$(bc <<< "scale=4; $size2/$size1*100")
     #info_msg0 "[OK] $1 rate=$rate%"
+
+    sleep 0.1
 }
 
-reduce_process(){
+function reduce_process(){
     info_msg1 ">>> reduce ok"
 }
 
+init_tmp_dir
+trap "clean_tmp_dir; exit" SIGINT SIGTERM
 
-mkfifo $PROCESS_FIFO
 exec 3<>$PROCESS_FIFO
 for i in $(seq 1 $PROCESS_NUM); do
     echo $i>&3
@@ -99,12 +114,13 @@ done
 
 ### 2
 info_msg1 ">>> start..."
-mkfifo $PROGRESS_BAR_FIFO
 exec 4<>$PROGRESS_BAR_FIFO
+
 
 while IFS="" read -r -d "" i; do
     ARGS_LIST+=("$i")
 done < <(args_list "$@")
+info_msg2 ">>> ${#ARGS_LIST[@]} tasks"
 
 progress_bar_process ${#ARGS_LIST[@]} &
 draw_progress_bar 0 ${#ARGS_LIST[@]}
@@ -128,11 +144,7 @@ done
 reduce_process
 
 
-### 2
-exec 4>&-
-rm $PROGRESS_BAR_FIFO
-### 2
-
 exec 3>&-
-rm $PROCESS_FIFO
+exec 4>&-
+clean_tmp_dir
 info_msg1 ">>> end"
