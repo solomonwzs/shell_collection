@@ -3,59 +3,64 @@
 # example: ./img_comp.sh /img/dir/path
 
 PROCESS_NUM=2
-TMP_DIR=/tmp/$$
-PROCESS_FIFO=$TMP_DIR/pf.fifo
-PROGRESS_BAR_FIFO=$TMP_DIR/pbf.fifo
-COMPLETE_COUNT=0
 ARGS_LIST=()
 PIDS=()
 PROGRESS_BAR_LEN=50
 START_TIME=$(date +%s)
 
-MSG_END="\033[0m"
-MSG_RED="\033[01;31m"
-MSG_GREEN="\033[01;32m"
-MSG_YELLOW="\033[01;33m"
-MSG_BLUE="\033[01;34m"
-MSG_PURPLE="\033[01;35m"
-MSG_CYAN="\033[01;36m"
+TMP_DIR=/tmp/$$
+MSG_FIFO=$TMP_DIR/msg.fifo
+TASK_LIST_FILE=$TMP_DIR/task_list
+#TASK_COUNT=0
 
-function error_msg(){
-    echo -e "$MSG_RED$1$MSG_END"
+COLOR_END="\033[0m"
+COLOR_RED="\033[01;31m"
+COLOR_GREEN="\033[01;32m"
+COLOR_YELLOW="\033[01;33m"
+COLOR_BLUE="\033[01;34m"
+COLOR_PURPLE="\033[01;35m"
+COLOR_CYAN="\033[01;36m"
+
+MSG_STOP=0
+MSG_HANDLE_1=1
+MSG_HANDLE_2=2
+
+
+error_msg(){
+    echo -e "$COLOR_RED$1$COLOR_END"
 }
 
-function info_msg0(){
-    echo -e "$1$MSG_END"
+info_msg0(){
+    echo -e "$1$COLOR_END"
 }
 
-function info_msg1(){
-    echo -e "$MSG_GREEN$1$MSG_END"
+info_msg1(){
+    echo -e "$COLOR_GREEN$1$COLOR_END"
 }
 
-function info_msg2(){
-    echo -e "$MSG_YELLOW$1$MSG_END"
+info_msg2(){
+    echo -e "$COLOR_YELLOW$1$COLOR_END"
 }
 
-function info_msg3(){
-    echo -e "$MSG_BLUE$1$MSG_END"
+info_msg3(){
+    echo -e "$COLOR_BLUE$1$COLOR_END"
 }
 
-function init_tmp_dir(){
+init_tmp_dir(){
     mkdir $TMP_DIR
-    mkfifo $PROCESS_FIFO
-    mkfifo $PROGRESS_BAR_FIFO
+    mkfifo $MSG_FIFO
 }
 
-function clean_tmp_dir(){
+clean_tmp_dir(){
     info_msg1 ">>> clean up..."
     rm -r $TMP_DIR
 }
 
-function args_list(){
+task_list(){
     find "$1" -iname "*.jpg" -print0
 }
 
-function draw_progress_bar(){
+draw_progress_bar(){
     finish=$(($PROGRESS_BAR_LEN*$1/$2))
     #echo $(($(date +%s)-$START_TIME))|awk '{printf(">>> %02d:%02d [", $0/60, $0%60)}'
     echo -ne ">>> ["
@@ -69,7 +74,20 @@ function draw_progress_bar(){
     echo -ne "\r"
 }
 
-function progress_bar_process(){
+msg_queue_process(){
+    while true; do
+        read -u3 tag args
+        if [ "$tag" -eq "$MSG_STOP" ]; then
+            exit
+        elif [ "$tag" -eq "$MSG_HANDLE_1" ]; then
+            :
+        elif [ "$tag" -eq "$MSG_HANDLE_2" ]; then
+            :
+        fi
+    done
+}
+
+progress_bar_process(){
     for i in $(seq 1 $1); do
         read -u4 j
         draw_progress_bar $i $1
@@ -77,7 +95,7 @@ function progress_bar_process(){
     echo ""
 }
 
-function map_process(){
+map_process(){
     #size1=$(ls -l "$1"|cut -d" " -f5)
     #convert -quality 85 "$1" "$1"
     #size2=$(ls -l "$1"|cut -d" " -f5)
@@ -87,14 +105,15 @@ function map_process(){
     sleep 0.1
 }
 
-function reduce_process(){
+reduce_process(){
     info_msg1 ">>> reduce ok"
 }
+
 
 init_tmp_dir
 trap "clean_tmp_dir; exit" SIGINT SIGTERM
 
-exec 3<>$PROCESS_FIFO
+exec 3<>$MSG_FIFO
 for i in $(seq 1 $PROCESS_NUM); do
     echo $i>&3
 done
@@ -108,7 +127,7 @@ done
 #        echo $j>&3
 #    } &
 #    PIDS+=("$!")
-#done < <(args_list "$@")
+#done < <(task_list "$@")
 #### 1
 
 
@@ -118,15 +137,17 @@ exec 4<>$PROGRESS_BAR_FIFO
 
 
 while IFS="" read -r -d "" i; do
-    ARGS_LIST+=("$i")
-done < <(args_list "$@")
-info_msg2 ">>> ${#ARGS_LIST[@]} tasks"
+    echo "$i">>$TASK_LIST_FILE
+done < <(task_list "$@")
+TASK_COUNT=$(wc -l "$TASK_LIST_FILE"|cut -d" " -f1)
+info_msg2 ">>> $TASK_COUNT tasks"
 
-progress_bar_process ${#ARGS_LIST[@]} &
-draw_progress_bar 0 ${#ARGS_LIST[@]}
+
+progress_bar_process $TASK_COUNT &
+draw_progress_bar 0 $TASK_COUNT
 PIDS+=("$!")
 
-for i in "${ARGS_LIST[@]}"; do
+while read i; do
     read -u3 j
     {
         map_process "$i"
@@ -134,7 +155,7 @@ for i in "${ARGS_LIST[@]}"; do
         echo $j>&4
     } &
     PIDS+=("$!")
-done
+done < $TASK_LIST_FILE
 ### 2
 
 
