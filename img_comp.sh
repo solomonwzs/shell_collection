@@ -80,7 +80,11 @@ msg_queue_process(){
         if [ "$tag" -eq "$MSG_STOP" ]; then
             exit
         elif [ "$tag" -eq "$MSG_HANDLE_1" ]; then
-            :
+            {
+                map_process "$args"
+                echo "$MSG_HANDLE_1 $args"
+            } &
+            PIDS+=("$!")
         elif [ "$tag" -eq "$MSG_HANDLE_2" ]; then
             :
         fi
