@@ -1,30 +1,33 @@
-#!/bin/sh
+#!/bin/bash
 
-N=5
+N=20
+M=3
+FINISH=0
 FIFO=/tmp/$$.fifo
 
 mkfifo $FIFO
 exec 3<>$FIFO
+trap "rm $FIFO; exit" SIGINT SIGTERM
 
-loop(){
-    for i in $(seq 1 $N); do
-        #until read tmp; do
-        #    :
-        #done
-        read -u3 tmp tmp1
-        echo "$tmp - $tmp1 out"
-    done < $FIFO
-}
-
-loop &
-LOOP_PID=$!
-for i in $(seq 1 $N); do
-    #sleep 0.1; echo $i > $FIFO
-    sleep 0.1; echo "$i $i $i" >&3
-    echo "$i in"
+for i in $(seq 1 $M); do
+    echo $i>&3
 done
-wait $LOOP_PID
+
+while [ "$FINISH" -lt "$N" ]; do
+    echo ":$FINISH"
+    FINISH=$(($FINISH+1))
+    #read -u3 j
+    #{
+    #    sleep 0.5
+    #    echo $j>&3
+    #    echo "$i $j"
+    #} &
+done #< <(seq 1 $N)
+
+wait
+
+exec 3>&-
+exec 3<&-
+rm $FIFO
 
 echo "end"
-
-rm $FIFO
