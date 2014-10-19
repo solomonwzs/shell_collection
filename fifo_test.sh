@@ -1,28 +1,35 @@
 #!/bin/bash
 
 N=20
-M=3
 FINISH=0
+IDLE=3
 FIFO=/tmp/$$.fifo
 
 mkfifo $FIFO
 exec 3<>$FIFO
 trap "rm $FIFO; exit" SIGINT SIGTERM
 
-for i in $(seq 1 $M); do
-    echo $i>&3
+for i in $(seq 1 $N); do
+    echo "task $i">&3
 done
 
 while [ "$FINISH" -lt "$N" ]; do
-    echo ":$FINISH"
-    FINISH=$(($FINISH+1))
-    #read -u3 j
-    #{
-    #    sleep 0.5
-    #    echo $j>&3
-    #    echo "$i $j"
-    #} &
-done #< <(seq 1 $N)
+    read -u3 tag args
+
+    if [ "$tag" == "task" ] && [ "$IDLE" -gt 0 ]; then
+        IDLE=$(($IDLE-1))
+        {
+            sleep 0.2
+            echo "$args ok"
+            echo "ok -" >&3
+        } &
+    elif [ "$tag" == "task" ] && [ "$IDLE" -eq 0 ]; then
+        echo "task $args" >&3
+    elif [ "$tag" == "ok" ]; then
+        IDLE=$(($IDLE+1))
+        FINISH=$(($FINISH+1))
+    fi
+done
 
 wait
 
