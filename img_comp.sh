@@ -20,42 +20,42 @@ MSG_BLUE="\033[01;34m"
 MSG_PURPLE="\033[01;35m"
 MSG_CYAN="\033[01;36m"
 
-function error_msg(){
+error_msg(){
     echo -e "$MSG_RED$1$MSG_END"
 }
 
-function info_msg0(){
+info_msg0(){
     echo -e "$1$MSG_END"
 }
 
-function info_msg1(){
+info_msg1(){
     echo -e "$MSG_GREEN$1$MSG_END"
 }
 
-function info_msg2(){
+info_msg2(){
     echo -e "$MSG_YELLOW$1$MSG_END"
 }
 
-function info_msg3(){
+info_msg3(){
     echo -e "$MSG_BLUE$1$MSG_END"
 }
 
-function init_tmp_dir(){
+init_tmp_dir(){
     mkdir $TMP_DIR
     mkfifo $PROCESS_FIFO
     mkfifo $PROGRESS_BAR_FIFO
 }
 
-function clean_tmp_dir(){
+clean_tmp_dir(){
     info_msg1 ">>> clean up..."
     rm -r $TMP_DIR
 }
 
-function args_list(){
+args_list(){
     find "$1" -iname "*.jpg" -print0
 }
 
-function draw_progress_bar(){
+draw_progress_bar(){
     finish=$(($PROGRESS_BAR_LEN*$1/$2))
     #echo $(($(date +%s)-$START_TIME))|awk '{printf(">>> %02d:%02d [", $0/60, $0%60)}'
     echo -ne ">>> ["
@@ -69,7 +69,7 @@ function draw_progress_bar(){
     echo -ne "\r"
 }
 
-function progress_bar_process(){
+progress_bar_process(){
     for i in $(seq 1 $1); do
         read -u4 j
         draw_progress_bar $i $1
@@ -77,7 +77,7 @@ function progress_bar_process(){
     echo ""
 }
 
-function map_process(){
+map_process(){
     #size1=$(ls -l "$1"|cut -d" " -f5)
     #convert -quality 85 "$1" "$1"
     #size2=$(ls -l "$1"|cut -d" " -f5)
@@ -87,7 +87,7 @@ function map_process(){
     sleep 0.1
 }
 
-function reduce_process(){
+reduce_process(){
     info_msg1 ">>> reduce ok"
 }
 
