@@ -70,8 +70,6 @@ for i in "${_MR_TASKS[@]}"; do
         elif [ "$msg" == "$_MR_MSG_OK" ]; then
             _MR_TASK_FINISH=$(($_MR_TASK_FINISH+1))
             mr_draw_progress_bar $_MR_TASK_FINISH $_MR_TASK_NUM
-        else
-            echo $msg $j
         fi
     done
 done
