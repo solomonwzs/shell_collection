@@ -14,6 +14,9 @@ _MR_TASKS=()
 _MR_MSG_NEW=0
 _MR_MSG_OK=1
 
+source "$_MR_BASE_DIR/utils.sh"
+source "$_MR_USER_SCRIPT"
+
 _mr_init_tmp_space(){
     mr_info_msg1 ">>> init temporary files..."
     mkdir $_MR_TMP_DIR
@@ -32,9 +35,6 @@ _mr_clear_tmp_space(){
         clear_user_space
     fi
 }
-
-source "$_MR_BASE_DIR/utils.sh"
-source "$_MR_USER_SCRIPT"
 
 if [ -n "$MR_PROCESS_NUM" ]; then
     _MR_PROCESS_NUM=$MR_PROCESS_NUM
@@ -57,28 +57,29 @@ for i in $(seq 1 $_MR_PROCESS_NUM); do
 done
 
 mr_info_msg1 ">>> map start"
+mr_draw_progress_bar 0 "$_MR_TASK_NUM"
 for i in "${_MR_TASKS[@]}"; do
     while true; do
         read -u3 msg j
         if [ "$msg" == "$_MR_MSG_NEW" ]; then
             {
-                map_process $i
+                map_process "$i" "$j"
                 echo "$_MR_MSG_OK $j" >&3
                 echo "$_MR_MSG_NEW $j" >&3
             } &
             break
         elif [ "$msg" == "$_MR_MSG_OK" ]; then
             _MR_TASK_FINISH=$(($_MR_TASK_FINISH+1))
-            mr_draw_progress_bar $_MR_TASK_FINISH $_MR_TASK_NUM
+            mr_draw_progress_bar "$_MR_TASK_FINISH" "$_MR_TASK_NUM"
         fi
     done
 done
 
-while [ "$_MR_TASK_FINISH" -lt $_MR_TASK_NUM ]; do
+while [ "$_MR_TASK_FINISH" -lt "$_MR_TASK_NUM" ]; do
     read -u3 msg j
     if [ "$msg" == "$_MR_MSG_OK" ]; then
         _MR_TASK_FINISH=$(($_MR_TASK_FINISH+1))
-        mr_draw_progress_bar $_MR_TASK_FINISH $_MR_TASK_NUM
+        mr_draw_progress_bar "$_MR_TASK_FINISH" "$_MR_TASK_NUM"
     fi
 done
 echo ""

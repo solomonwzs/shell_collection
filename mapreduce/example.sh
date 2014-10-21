@@ -15,7 +15,8 @@ init_task_list(){
 }
 
 map_process(){
-    echo "$1 ok" >> "/tmp/list"
+    local size=$(ls -l "$1"|cut -d" " -f5)
+    echo "$1 size:$size, $2 ok" >> "/tmp/list"
     sleep 0.2
 }
 
