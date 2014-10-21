@@ -19,8 +19,8 @@ source "$_MR_USER_SCRIPT"
 
 _mr_init_tmp_space(){
     mr_info_msg1 ">>> init temporary files..."
-    mkdir $_MR_TMP_DIR
-    mkfifo $_MR_MSG_FIFO
+    mkdir "$_MR_TMP_DIR"
+    mkfifo "$_MR_MSG_FIFO"
 
     if [ "$(type -t init_user_space)" == "function" ]; then
         init_user_space
@@ -29,7 +29,7 @@ _mr_init_tmp_space(){
 
 _mr_clear_tmp_space(){
     mr_info_msg1 ">>> clear temporary files..."
-    rm -r $_MR_TMP_DIR
+    rm -r "$_MR_TMP_DIR"
 
     if [ "$(type -t clear_user_space)" == "function" ]; then
         clear_user_space
@@ -46,29 +46,29 @@ trap "_mr_clear_tmp_space; exit" SIGINT SIGTERM
 mr_info_msg1 ">>> start..."
 exec 3<>$_MR_MSG_FIFO
 
-while IFS="" read -r i; do
-    _MR_TASKS+=("$i")
+while IFS="" read -r _mr_i; do
+    _MR_TASKS+=("$_mr_i")
 done < <(init_task_list)
 _MR_TASK_NUM=${#_MR_TASKS[@]}
 mr_info_msg1 ">>> $_MR_TASK_NUM tasks"
 
 for i in $(seq 1 $_MR_PROCESS_NUM); do
-    echo "$_MR_MSG_NEW $i" >&3
+    echo "$_MR_MSG_NEW $_mr_i" >&3
 done
 
 mr_info_msg1 ">>> map start"
 mr_draw_progress_bar 0 "$_MR_TASK_NUM"
-for i in "${_MR_TASKS[@]}"; do
+for _mr_i in "${_MR_TASKS[@]}"; do
     while true; do
-        read -u3 msg j
-        if [ "$msg" == "$_MR_MSG_NEW" ]; then
+        read -u3 _mr_msg _mr_j
+        if [ "$_mr_msg" == "$_MR_MSG_NEW" ]; then
             {
-                map_process "$i" "$j"
-                echo "$_MR_MSG_OK $j" >&3
-                echo "$_MR_MSG_NEW $j" >&3
+                map_process "$_mr_i" "$_mr_j"
+                echo "$_MR_MSG_OK $_mr_j" >&3
+                echo "$_MR_MSG_NEW $_mr_j" >&3
             } &
             break
-        elif [ "$msg" == "$_MR_MSG_OK" ]; then
+        elif [ "$_mr_msg" == "$_MR_MSG_OK" ]; then
             _MR_TASK_FINISH=$(($_MR_TASK_FINISH+1))
             mr_draw_progress_bar "$_MR_TASK_FINISH" "$_MR_TASK_NUM"
         fi
@@ -76,8 +76,8 @@ for i in "${_MR_TASKS[@]}"; do
 done
 
 while [ "$_MR_TASK_FINISH" -lt "$_MR_TASK_NUM" ]; do
-    read -u3 msg j
-    if [ "$msg" == "$_MR_MSG_OK" ]; then
+    read -u3 _mr_msg _mr_j
+    if [ "$_mr_msg" == "$_MR_MSG_OK" ]; then
         _MR_TASK_FINISH=$(($_MR_TASK_FINISH+1))
         mr_draw_progress_bar "$_MR_TASK_FINISH" "$_MR_TASK_NUM"
     fi
