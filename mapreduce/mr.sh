@@ -52,7 +52,7 @@ done < <(init_task_list)
 _MR_TASK_NUM=${#_MR_TASKS[@]}
 mr_info_msg1 ">>> $_MR_TASK_NUM tasks"
 
-for $_mr_i in $(seq 1 $_MR_PROCESS_NUM); do
+for _mr_i in $(seq 1 $_MR_PROCESS_NUM); do
     echo "$_MR_MSG_NEW $_mr_i" >&3
 done
 
