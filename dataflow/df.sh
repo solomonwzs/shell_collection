@@ -6,6 +6,9 @@ _DF_TMP_DIR=/tmp/df_$$
 _DF_MSG_FIFO=$_DF_TMP_DIR/msg.fifo
 _DF_USER_SCRIPT=$1
 
+_DF_TASKS=()
+_DF_TASK_NUM=0
+
 _DF_MSG_NEW=0
 
 source "$_DF_BASE_DIR/utils.sh"
@@ -30,12 +33,40 @@ for _df_i in $(seq 1 ${DF_NUM_GROUP[0]}); do
     echo "$_DF_MSG_NEW $_df_i" >&3
 done
 
-for _df_i in "${DF_FUN_GROUP[@]}"; do
-    echo $(type -t $_df_i)
+#for _df_i in "${DF_FUN_GROUP[@]}"; do
+#    echo $(type -t $_df_i)
+#done
+#
+#for _df_i in "${DF_NUM_GROUP[@]}"; do
+#    echo "[$_df_i]"
+#done
+
+while IFS="" read -r _df_i; do
+    _DF_TASKS+=("$_df_i")
+done < <(init_task_list)
+_DF_TASK_NUM=${#_DF_TASKS[@]}
+
+for _df_i in $(seq 1 ${DF_NUM_GROUP[0]}); do
+    echo "${DF_MSG_GROUP[0]} $_df_i" >&3
 done
 
-for _df_i in "${DF_NUM_GROUP[@]}"; do
-    echo "[$_df_i]"
+echo ${DF_MSG_GROUP[0]}
+for _df_i in "${_DF_TASKS[@]}"; do
+    while true; do
+        read -u3 _df_msg _df_j
+        for _df_k in "${DF_MSG_GROUP[@]}"; do
+            if [ "$_df_msg" == "$_df_k" ]; then
+                echo "1 $_df_msg"
+
+                echo "$_df_msg $df_j" >&3
+                break
+            fi
+        done
+
+        if [ "$_df_k" == "${DF_MSG_GROUP[0]}" ]; then
+            break
+        fi
+    done
 done
 
 exec 3>&-
