@@ -14,6 +14,8 @@ _DF_MSG_NEW=0
 source "$_DF_BASE_DIR/utils.sh"
 source "$_DF_USER_SCRIPT"
 
+_DF_GROUP_NUM=${#DF_NUM_GROUP[@]}
+
 _df_init_tmp_space(){
     mkdir "$_DF_TMP_DIR"
     mkfifo "$_DF_MSG_FIFO"
@@ -50,23 +52,27 @@ for _df_i in $(seq 1 ${DF_NUM_GROUP[0]}); do
     echo "${DF_MSG_GROUP[0]} $_df_i" >&3
 done
 
-echo ${DF_MSG_GROUP[0]}
+
 for _df_i in "${_DF_TASKS[@]}"; do
     while true; do
         read -u3 _df_msg _df_j
-        for _df_k in "${DF_MSG_GROUP[@]}"; do
-            if [ "$_df_msg" == "$_df_k" ]; then
-                echo "1 $_df_msg"
+        for _df_k in $(seq 0 $(($_DF_GROUP_NUM-1))); do
+            if [ "$_df_msg" == "${DF_MSG_GROUP[$_df_k]}" ]; then
+                ${DF_FUN_GROUP[$_df_k]} "$_df_i" "$_df_j"
 
-                echo "$_df_msg $df_j" >&3
+                echo "$_df_msg $_df_j" >&3
                 break
             fi
         done
 
-        if [ "$_df_k" == "${DF_MSG_GROUP[0]}" ]; then
+        if [ "$_df_k" == 0 ]; then
             break
         fi
     done
+done
+
+for _df_i in $(seq 0 $(($_DF_GROUP_NUM-1))); do
+    echo ${DF_NUM_GROUP[$_df_i]}
 done
 
 exec 3>&-
