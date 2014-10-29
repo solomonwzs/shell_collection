@@ -29,3 +29,8 @@ df_info_msg2(){
 df_info_msg3(){
     echo -e "$_DF_COLOR_BLUE$1$_DF_COLOR_END"
 }
+
+df_next(){
+    echo "$1"
+    echo "$2"
+}

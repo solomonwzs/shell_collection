@@ -12,13 +12,13 @@ init_task_list(){
 }
 
 fun_a(){
-    echo "fun_a"
+    echo "GOTO_C"
 }
 
 fun_b(){
-    echo "fun_b"
+    echo "$DF_STOP"
 }
 
 fun_c(){
-    echo "fun_c"
+    echo "GOTO_B"
 }

@@ -11,10 +11,13 @@ _DF_TASK_NUM=0
 
 _DF_MSG_NEW=0
 
+DF_STOP="DF_STOP"
+
 source "$_DF_BASE_DIR/utils.sh"
 source "$_DF_USER_SCRIPT"
 
 _DF_GROUP_NUM=${#DF_NUM_GROUP[@]}
+_DF_PROCESS_POOL=()
 
 _df_init_tmp_space(){
     mkdir "$_DF_TMP_DIR"
@@ -52,7 +55,6 @@ for _df_i in $(seq 1 ${DF_NUM_GROUP[0]}); do
     echo "${DF_MSG_GROUP[0]} $_df_i" >&3
 done
 
-
 for _df_i in "${_DF_TASKS[@]}"; do
     while true; do
         read -u3 _df_msg _df_j
@@ -71,9 +73,13 @@ for _df_i in "${_DF_TASKS[@]}"; do
     done
 done
 
-for _df_i in $(seq 0 $(($_DF_GROUP_NUM-1))); do
-    echo ${DF_NUM_GROUP[$_df_i]}
-done
+fun(){
+    df_next "a" "${DF_NUM_GROUP[@]}"
+    df_next "b" "c d"
+}
+while IFS="" read -r _df_i; do
+    echo "L: $_df_i"
+done < <(fun)
 
 exec 3>&-
 exec 3<&-
