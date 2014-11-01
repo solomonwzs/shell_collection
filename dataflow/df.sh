@@ -2,6 +2,7 @@
 
 _DF_BASE_DIR=$(dirname $0)
 _DF_TMP_DIR=/tmp/df_$$
+_DF_TMP_PID_DIR=$_DF_TMP_DIR/df_pid
 
 _DF_MSG_FIFO=$_DF_TMP_DIR/msg.fifo
 _DF_USER_SCRIPT=$1
@@ -21,6 +22,14 @@ _DF_PROCESS_POOL=()
 
 _df_init_tmp_space(){
     mkdir "$_DF_TMP_DIR"
+    mkdir "$_DF_TMP_PID_DIR"
+
+    for _df_i in $(seq 1 $_DF_GROUP_NUM); do
+        for _df_j in $(seq 1 ${DF_NUM_GROUP[$(($_df_i-1))]}); do
+            touch "$_DF_TMP_PID_DIR/$_df_i-$_df_j"
+        done
+    done
+
     mkfifo "$_DF_MSG_FIFO"
 }
 
