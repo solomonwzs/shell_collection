@@ -2,6 +2,7 @@
 
 _MR_BASE_DIR=$(dirname $0)
 _MR_TMP_DIR=/tmp/mr_$$
+_MR_TASK_FILE=$_MR_TMP_DIR/task_file
 
 _MR_MSG_FIFO=$_MR_TMP_DIR/msg.fifo
 _MR_USER_SCRIPT=$1
@@ -46,10 +47,12 @@ trap "_mr_clear_tmp_space; exit" SIGINT SIGTERM
 mr_info_msg1 ">>> start..."
 exec 3<>$_MR_MSG_FIFO
 
-while IFS="" read -r _mr_i; do
-    _MR_TASKS+=("$_mr_i")
-done < <(init_task_list)
-_MR_TASK_NUM=${#_MR_TASKS[@]}
+# while IFS="" read -r _mr_i; do
+#     _MR_TASKS+=("$_mr_i")
+# done < <(init_task_list)
+# _MR_TASK_NUM=${#_MR_TASKS[@]}
+init_task_list > $_MR_TASK_FILE
+_MR_TASK_NUM=$(wc -l $_MR_TASK_FILE|cut -d" " -f1)
 mr_info_msg1 ">>> $_MR_TASK_NUM tasks"
 
 for _mr_i in $(seq 1 $_MR_PROCESS_NUM); do
@@ -58,7 +61,8 @@ done
 
 mr_info_msg1 ">>> map start"
 mr_draw_progress_bar 0 "$_MR_TASK_NUM"
-for _mr_i in "${_MR_TASKS[@]}"; do
+# for _mr_i in "${_MR_TASKS[@]}"; do
+while IFS="" read -r _mr_i; do
     while true; do
         read -u3 _mr_msg _mr_j
         if [ "$_mr_msg" == "$_MR_MSG_NEW" ]; then
@@ -73,7 +77,8 @@ for _mr_i in "${_MR_TASKS[@]}"; do
             mr_draw_progress_bar "$_MR_TASK_FINISH" "$_MR_TASK_NUM"
         fi
     done
-done
+done < "$_MR_TASK_FILE"
+# done
 
 while [ "$_MR_TASK_FINISH" -lt "$_MR_TASK_NUM" ]; do
     read -u3 _mr_msg _mr_j
