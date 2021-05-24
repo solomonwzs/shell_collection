@@ -39,9 +39,11 @@ mr_draw_progress_bar(){
     for i in $(seq 1 $finish); do
         str=$str"#"
     done
-    for i in $(seq $(($finish+1)) $_MR_PROGRESS_BAR_LEN); do
-        str=$str"-"
-    done
+    if [ $finish -lt $_MR_PROGRESS_BAR_LEN ]; then
+        for i in $(seq $(($finish+1)) $_MR_PROGRESS_BAR_LEN); do
+            str=$str"-"
+        done
+    fi
     str=$str"] $(($1*100/$2))%"
     str=$str"\r"
     echo -ne "$str"

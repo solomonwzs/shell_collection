@@ -1,6 +1,6 @@
 #!/bin/bash
 
-_MR_BASE_DIR=$(dirname $0)
+_MR_BASE_DIR=$(dirname "$0")
 _MR_TMP_DIR=/tmp/mr_$$
 _MR_TASK_FILE=$_MR_TMP_DIR/task_file
 
@@ -52,10 +52,10 @@ exec 3<>$_MR_MSG_FIFO
 # done < <(init_task_list)
 # _MR_TASK_NUM=${#_MR_TASKS[@]}
 init_task_list > $_MR_TASK_FILE
-_MR_TASK_NUM=$(wc -l $_MR_TASK_FILE|cut -d" " -f1)
+_MR_TASK_NUM=$(wc -l $_MR_TASK_FILE|awk '{print $1}')
 mr_info_msg1 ">>> $_MR_TASK_NUM tasks"
 
-for _mr_i in $(seq 1 $_MR_PROCESS_NUM); do
+for _mr_i in $(seq 1 "$_MR_PROCESS_NUM"); do
     echo "$_MR_MSG_NEW $_mr_i" >&3
 done
 
