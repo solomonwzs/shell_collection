@@ -46,5 +46,5 @@ mr_draw_progress_bar(){
     fi
     str=$str"] $(($1*100/$2))%"
     str=$str"\r"
-    echo -ne "$str"
+    echo -ne "\033[2K$str"
 }
